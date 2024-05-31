@@ -1,35 +1,38 @@
-from gnome.persist.base_schema import LongLat, ObjTypeSchema
+from colander import SequenceSchema
+from gnome.persist.base_schema import LongLat, ObjTypeSchema,WorldPoint
 from gnome.gnomeobject import GnomeId
 from pyproj import Transformer, CRS
 import numpy as np
 
+class Positions(SequenceSchema):
+    position = WorldPoint(save=True, update=True)
+
 class ConcentrationLocationSchema(ObjTypeSchema):
-    locations = LongLat(
-        save=True, update=True
-    )
+    locations = Positions(save=True, update=True)
 
 class ConcentrationLocation(GnomeId):
     _schema = ConcentrationLocationSchema
 
     def __init__(self,
-                 long=0.0,
-                 lat=0.0,
+                 locations=None,
                  **kwargs):
 
         super(ConcentrationLocation, self).__init__(**kwargs)
         
-        self.long = long
-        self.lat = lat
-    
+        self.locations = locations   
 
     def transform(self, projection_string):
-        crs_4326 = CRS.from_epsg(4326)
-        crs_project = CRS.from_string(projection_string)
-        crs_transformer = Transformer.from_crs(crs_4326, crs_project)
-        transformed = crs_transformer.transform(self.lat, self.long)
-        self._x = transformed[0]
-        self._y = transformed[1]
-        self._xy = np.array([[self._x, self._y]])
+        if self.locations is not None and len(self.locations) > 0:
+            crs_4326 = CRS.from_epsg(4326)
+            crs_project = CRS.from_string(projection_string)
+            crs_transformer = Transformer.from_crs(crs_4326, crs_project)
+            if crs_transformer.source_crs == crs_transformer.target_crs:
+                transformed = crs_transformer.transform(self.locations[0][0], self.locations[0][1])
+            else:
+                transformed = crs_transformer.transform(self.locations[0][1], self.locations[0][0])
+            self._x = transformed[0]
+            self._y = transformed[1]
+            self._xy = np.array([[self._x, self._y]])
 
     @property
     def x(self):

@@ -48,7 +48,10 @@ class DfsuWaterDepth(GnomeId):
         """
         if self.filename is not None and self._ds is not None:
             try:
-                coordinates = self._crs_transformer.transform(points[:,1],points[:,0])
+                if self._crs_transformer.source_crs == self._crs_transformer.target_crs:
+                    coordinates = self._crs_transformer.transform(points[:,0],points[:,1])
+                else:
+                    coordinates = self._crs_transformer.transform(points[:,1],points[:,0])
                 coordinates = np.array(coordinates).transpose()
 
                 first_time, second_time = self._locate_time(time)
@@ -65,8 +68,13 @@ class DfsuWaterDepth(GnomeId):
         if self.filename is not None and os.path.exists(self.filename):
             self._ds = mikeio.read(self.filename, items=["Total water depth"])
             self._project_string = self._ds.geometry.projection
-            self._crs_dfsu = CRS.from_string(self._ds.geometry.projection)
-            self._crs_transformer = Transformer.from_crs(self._crs_4326, self._crs_dfsu)
+            if self._project_string.lower() == "long/lat":
+                self._crs_dfsu = CRS.from_epsg(4326)  
+                self._project_string = self._crs_dfsu.to_string()           
+            else:
+                self._crs_dfsu = CRS.from_string(self._ds.geometry.projection)                
+
+            self._crs_transformer = Transformer.from_crs(self._crs_4326, self._crs_dfsu)            
             self._time_interval = self._ds.time[1] - self._ds.time[0]
 
     @property

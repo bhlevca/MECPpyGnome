@@ -60,7 +60,6 @@ class BaseOutputterSchema(ObjTypeSchema):
     water_depth_dfsu_file = SchemaNode(
         String(allow_empty=True), save=True, update=True
     )
-    volumetric_conc_poi = ConcentrationLocationSchema
 
 
 class Outputter(GnomeId):
@@ -84,7 +83,6 @@ class Outputter(GnomeId):
                  output_dir=None,  # Fixme: this probably shouldn't be in the base class
                  surface_conc=None,
                  water_depth_dfsu_file=None,
-                 volumetric_conc_poi=None,
                  *args,
                  **kwargs):
         """
@@ -167,7 +165,6 @@ class Outputter(GnomeId):
 
         self.surface_conc = surface_conc
         self.water_depth_dfsu_file = water_depth_dfsu_file
-        self.volumetric_conc_poi = volumetric_conc_poi
         
         self.array_types = dict()
         
@@ -376,7 +373,7 @@ class Outputter(GnomeId):
     def DfsuWaterDepth(self):
         if not hasattr(self, '_dfsu_water_depth'):
             self._dfsu_water_depth = None
-        if self._dfsu_water_depth is None:
+        if self._dfsu_water_depth is None and os.path.exists(self.water_depth_dfsu_file):
             self._dfsu_water_depth = DfsuWaterDepth(dfsufilename = self.water_depth_dfsu_file)
 
         return self._dfsu_water_depth
@@ -385,10 +382,15 @@ class Outputter(GnomeId):
     def VolumetricConcentrationPOI(self):
         if not hasattr(self, '_volumetric_concentration_poi'):
             self._volumetric_concentration_poi = None
-        if self._volumetric_concentration_poi is None and self.volumetric_conc_poi is not None:
-            self._volumetric_concentration_poi = ConcentrationLocation(long=self.volumetric_conc_poi[0], lat=self.volumetric_conc_poi[1])
 
         return self._volumetric_concentration_poi  
+    
+    @VolumetricConcentrationPOI.setter
+    def VolumetricConcentrationPOI(self, value:ConcentrationLocation):
+        if not hasattr(self, '_volumetric_concentration_poi'):
+            self._volumetric_concentration_poi = None
+        
+        self._volumetric_concentration_poi = value
 
     def clean_output_files(self):
         '''

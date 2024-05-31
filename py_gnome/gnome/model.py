@@ -90,6 +90,7 @@ from gnome.spills.substance import NonWeatheringSubstance
 from gnome.ops import aggregated_data, weathering_array_types, non_weathering_array_types
 from gnome.ops.viscosity import recalc_viscosity
 from gnome.ops.density import recalc_density
+from gnome.concentration.concentration_location import ConcentrationLocation, ConcentrationLocationSchema
 
 
 class ModelSchema(ObjTypeSchema):
@@ -103,6 +104,7 @@ class ModelSchema(ObjTypeSchema):
 
     #name of lake
     lake = SchemaNode(String())
+    concentration = ConcentrationLocationSchema(save=True, update=True)
 
     duration = SchemaNode(
         extend_colander.TimeDelta()
@@ -196,6 +198,7 @@ class Model(GnomeId):
                  time_step=timedelta(minutes=15),
                  start_time=round_time(datetime.now(), 3600),
                  lake = 'Lake St. Clair',
+                 concentration = None,
                  duration=timedelta(days=1),
                  weathering_substeps=1,
                  map=None,
@@ -269,6 +272,7 @@ class Model(GnomeId):
         self.start_time = start_time
 
         self.lake = lake
+        self.concentration = concentration
 
         self._duration = duration
         self.weathering_substeps = weathering_substeps
@@ -1077,6 +1081,8 @@ class Model(GnomeId):
         output_info = {'step_num': self.current_time_step}
 
         for outputter in self.outputters:
+            #set the concentration location
+            outputter.VolumetricConcentrationPOI = self.concentration
             if self.current_time_step == self.num_time_steps - 1:
                 output = outputter.write_output(self.current_time_step, True)
             else:
