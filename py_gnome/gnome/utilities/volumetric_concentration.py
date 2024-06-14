@@ -37,7 +37,13 @@ def compute_volumetric_concentration(sc, water_depth:DfsuWaterDepth, location:Co
             if location.xy is None:
                 location.transform(water_depth.project_string)
             
-            idw_tree = Tree2(coordinates, sc['volumetric_concentration'], distance_threshold = 100)  # scatter data points
+            #the distance threshold for the interpolation
+            #100m is used here. If the the projection is long/lat, it's 0.001 degree.
+            threshold = 100
+            if not water_depth.isProjection:
+                threshold = 0.001
+
+            idw_tree = Tree2(coordinates, sc['volumetric_concentration'], distance_threshold = threshold)  # scatter data points
             sc['volumetric_concentration_poi'] = idw_tree(location.xy)[0]
             print(f"Volumetric Concentration: {sc['volumetric_concentration_poi']}")
 

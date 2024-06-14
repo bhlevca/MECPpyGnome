@@ -30,6 +30,7 @@ class DfsuWaterDepth(GnomeId):
         super(DfsuWaterDepth, self).__init__(name=name, **kwargs)
         self._filename = dfsufilename
         self._crs_4326 = CRS.from_epsg(4326)
+        self._isProjection = True
         self.read_dfsu()        
 
     def transform(self, location:LongLat):
@@ -70,12 +71,17 @@ class DfsuWaterDepth(GnomeId):
             self._project_string = self._ds.geometry.projection
             if self._project_string.lower() == "long/lat":
                 self._crs_dfsu = CRS.from_epsg(4326)  
-                self._project_string = self._crs_dfsu.to_string()           
+                self._project_string = self._crs_dfsu.to_string()  
+                self._isProjection = False         
             else:
                 self._crs_dfsu = CRS.from_string(self._ds.geometry.projection)                
 
             self._crs_transformer = Transformer.from_crs(self._crs_4326, self._crs_dfsu)            
             self._time_interval = self._ds.time[1] - self._ds.time[0]
+
+    @property
+    def isProjection(self)->bool:
+        return self._isProjection
 
     @property
     def project_string(self):
