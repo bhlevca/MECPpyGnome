@@ -74,6 +74,9 @@ class SpillSchema(ObjTypeSchema):
     amount = SchemaNode(
         Float(), missing=0, save=True, update=True
     )
+    standard = SchemaNode(
+        Float(), missing=0, save=True, update=True
+    )
     amount_uncertainty_scale = SchemaNode(
         Float(), missing=drop, save=True, update=True
     )
@@ -113,6 +116,7 @@ class Spill(BaseSpill):
                  on=True,  # fixme: this shouldn't be the first parameter!
                  num_elements=1000,
                  amount=0,  # could be volume or mass
+                 standard=0.001,
                  units='kg',
                  substance=None,
                  release=None,
@@ -172,6 +176,7 @@ class Spill(BaseSpill):
 
         self.units = units
         self.amount = amount
+        self.standard = standard
 
 #         self.data = LEData()
         self.water = water
@@ -256,6 +261,14 @@ class Spill(BaseSpill):
     @num_elements.setter
     def num_elements(self, ne):
         self.release.num_elements = ne
+
+    @property
+    def standard(self):
+        return self._standard
+
+    @standard.setter
+    def standard(self, standard):
+        self._standard = standard
 
     # doesn't seem like this should be set on the spill object!
 #     @property
